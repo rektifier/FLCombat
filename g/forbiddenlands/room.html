@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="description" content="Forbidden Lands Fighting Pit">
+        <meta name="author" content="Mikael Ribeiro">
+        <title>Forbidden Lands Fighting Pit</title>
+        <link rel="shortcut icon" type="image/x-icon" href="../../images/favicon.ico">
+        <link rel="icon" href="../../images/favicon.ico" type="image/x-icon">
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="../../css/bootstrap.min.css">
+        <link rel="stylesheet" href="../../css/simple-sidebar.css">
+        <link rel="stylesheet" href="../../css/jquery-ui.min.css">
+
+
+        <style>
+
+            .tab-content>.tab-pane {
+                display: none;
+            }
+
+            .tab-content>.active {
+                display: block;
+            }
+
+            .top-buffer {
+                margin-top: 20px;
+            }
+
+            .table>tbody>tr>td,
+            th {
+                vertical-align: middle;
+                text-align: center;
+            }
+
+            .cardimage {
+                transition: transform .2s;
+                /* Animation */
+                width: 100px;
+                margin: 0 auto;
+            }
+
+            .cardimage:hover {
+                transform: scale(2.5);
+                /* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport) */
+            }
+
+            ul#cardlist li {
+                display: inline;
+            }
+
+            .incombat {
+                color: #f8f8f8;
+                background-color: #fc7100;
+                font-weight: bold;
+
+            }
+
+            .incombat:hover {
+                color: #f8f8f8;
+                background-color: #fc7100;
+            }
+
+            .dicerolls_area {
+                float: left;
+                height: 400px;
+                /* height:95%; */
+                overflow-x: hidden;
+                overflow-y: auto;
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .dicerolls_area li {
+                padding: 14px 14px 0;
+            }
+
+            /* .chat_area li {
+                padding: 14px 14px 0;
+            } */
+
+            .chat-body1 p {
+                background: #fbf9fa none repeat scroll 0 0;
+                padding: 10px;
+            }
+
+            /* .chat_area li:last-child {
+                padding-bottom: 10px;
+            } */
+
+            .list-dicerolls-messages {
+
+                max-height: 380px;
+                /* max-height: 10%; */
+                margin-bottom: 10px;
+                overflow-y: scroll;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* .list-chat-messages {
+                max-height: 180px;
+                margin-bottom: 10px;
+                overflow-y: scroll;
+                -webkit-overflow-scrolling: touch;
+            } */
+
+            .pull-right {
+                float: right !important;
+            }
+
+            .chat_time {
+                font-size: small;
+                font-style: italic;
+                margin-top: 10px;
+            }
+        </style>
+
+    </head>
+
+    <body>
+
+        <!-- Settings Modal -->
+        <div class="modal fade" id="settingsModal" tabindex="-1" role="dialog" aria-labelledby="settingsModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="settingsModalLabel">Room settings</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="form-group">
+                                <label for="settingsRoomOwner">Owner</label>
+                                <input type="text" class="form-control" id="settingsRoomOwner">
+                            </div>
+                            <div class="form-group">
+                                <label for="settingsRoomName">Name</label>
+                                <input type="text" class="form-control" id="settingsRoomName">
+                            </div>
+                            <div class="form-group">
+                                <label for="settingsRoomTitle">Description</label>
+                                <input type="text" class="form-control" id="settingsRoomTitle">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn shadow-none shadow-none btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn shadow-none shadow-none btn-primary" id="btn-settings-save">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex" id="wrapper">
+
+            <!-- Sidebar -->
+            <div class="bg-light border-right" id="sidebar-wrapper">
+                <div id="roomNameHeader" class="sidebar-heading">
+
+                </div>
+                <div class="list-group list-group-flush">
+                    <ul class="list-group" id="userslist"></ul>
+                    <ul class="list-group admingroup">
+                        <li class="list-group-item list-group-item-action"></li>
+                        <li id="kickActionDroppable" class="list-group-item list-group-item-action text-white bg-secondary">Drag here to kill fighter</li>
+                        <li class="list-group-item"></li>
+                    </ul>
+                    <div class="input-group admingroup">
+                        <input type="text" id="add-enemy-input" class="form-control" placeholder="Enemy name">
+                        <div class="input-group-append">
+                            <button id="add-enemy-button" type="button" class="btn shadow-none btn-primary">Add</button>
+                        </div>
+                        <div class="input-group top-buffer">
+                            <button id="btn-start-fight-1" type="button" class="btn shadow-none btn-primary btn-sm btn-block">Show first card</button>
+                            <button id="btn-start-fight-2" type="button" class="btn shadow-none btn-primary btn-sm btn-block">Show second card</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- /#sidebar-wrapper -->
+
+            <!-- Page Content -->
+            <div id="page-content-wrapper">
+
+                <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+           
+                <div>Dag <span id="nrOfDays">1</span></strong></div>
+                <div style="margin-left: 20px;"></div>
+                <div style="border-left: 1px solid #333;">&nbsp;</div>
+                <div style="margin-right: 20px;"></div>
+
+                <div class="btn-group quarterDay" role="group" aria-label="Quarter days" >
+                    <button type="button" class="btn btn-light active" data-quarterdayid="0">Morgon</button>
+                    <button type="button" class="btn btn-light" data-quarterdayid="1">Dag</button>
+                    <button type="button" class="btn btn-light" data-quarterdayid="2">Kväll</button>
+                    <button type="button" class="btn btn-light" data-quarterdayid="3">Natt</button>
+                </div>
+
+                <div class="admingroup" style="margin-left: 20px;">
+                        <button id="nextQuarterDay" type="button" class="btn btn-secondary"><</button>
+                        <button id="previousQuarterDay" type="button" class="btn btn-secondary">></button>
+                </div>
+
+                    
+
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
+                            
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <!-- Settings -->
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+                                    <!-- <a class="dropdown-item" href="#">Action</a>-->
+                                    <a id="settings-button" class="dropdown-item" data-toggle="modal" data-target="#settingsModal" href="#">Settings</a>
+                                    <div class="dropdown-divider"></div>
+                                    <a id="leave-room-button" class="dropdown-item" href="javascript:void(0)">Leave room</a>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+
+                <div class="container-fluid">
+
+                    <!--
+                <div class="row">
+                    <div class="col-md-12">
+                        <h1 class="mt-4">Fight!</h1>
+                        <p>The starting state of the menu will appear collapsed on smaller screens, and will appear non-collapsed on larger screens. When toggled using the button below, the menu will change.</p>
+                        <p>Make sure to keep all page content within the <code>#page-content-wrapper</code>. The top navbar is optional, and just for demonstration. Just create an element with the <code>#menu-toggle</code> ID which will toggle the menu when clicked.</p>
+                    </div>
+                </div>
+           -->
+                    <div class="row" id="playground">
+                        <div class="col">
+                            <div id="playground-player-1" class="row">
+                                <div class="col-12 text-center">
+                                    <h6 class="playground-title"></h6>
+                                </div>
+                                <div class="col-6 text-center">
+                                    <h6 class="title-nr-card-1">1</h6>
+                                    <img src="https://firebasestorage.googleapis.com/v0/b/fbcombat-11ea1.appspot.com/o/g%2Fforbiddenlands%2Fcards%2Fbaksida.jpg?alt=media&token=53401f1f-aee5-43bc-89d0-a0a06ca6fe5c" width="150" class="card-played-1">
+                                </div>
+                                <div class="col-6 text-center">
+                                    <h6 class="title-nr-card-2">2</h6>
+                                    <img src="https://firebasestorage.googleapis.com/v0/b/fbcombat-11ea1.appspot.com/o/g%2Fforbiddenlands%2Fcards%2Fbaksida.jpg?alt=media&token=53401f1f-aee5-43bc-89d0-a0a06ca6fe5c" width="150" class="card-played-2">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div id="playground-player-2" class="row">
+                                <div class="col-12 text-center playground-title">
+                                    <h6></h6>
+                                </div>
+                                <div class="col-6 text-center">
+                                    <h6 class="title-nr-card-1">1</h6>
+                                    <img src="https://firebasestorage.googleapis.com/v0/b/fbcombat-11ea1.appspot.com/o/g%2Fforbiddenlands%2Fcards%2Fbaksida.jpg?alt=media&token=53401f1f-aee5-43bc-89d0-a0a06ca6fe5c" width="150" class="card-played-1">
+                                </div>
+                                <div class="col-6 text-center">
+                                    <h6 class="title-nr-card-2">2</h6>
+                                    <img src="https://firebasestorage.googleapis.com/v0/b/fbcombat-11ea1.appspot.com/o/g%2Fforbiddenlands%2Fcards%2Fbaksida.jpg?alt=media&token=53401f1f-aee5-43bc-89d0-a0a06ca6fe5c" width="150" class="card-played-2">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="dicerolls_area">
+                                <ul id="dicerolls-messages" class="list-group list-group-flush list-dicerolls-messages"></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <nav>
+                                <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                                    <a class="nav-item nav-link active" id="nav-fight-tab" data-toggle="tab" href="#nav-fight" role="tab" aria-controls="nav-fight" aria-selected="true">Fight</a>
+                                    <a class="nav-item nav-link admingroup" id="nav-initiative-tab" data-toggle="tab" href="#nav-initiative" role="tab" aria-controls="nav-initiative" aria-selected="false">Initiative</a>
+                                    <a class="nav-item nav-link" id="nav-dice-tab" data-toggle="tab" href="#nav-dice" role="tab" aria-controls="nav-dice" aria-selected="false">Tärningar</a>
+                                    <a class="nav-item nav-link" id="nav-map-tab" data-toggle="tab" href="#nav-map" role="tab" aria-controls="nav-dice" aria-selected="false">Karta</a>
+                                    
+                                    <!-- <a class="nav-item nav-link" id="nav-chat-tab" data-toggle="tab" href="#nav-chat" role="tab" aria-controls="nav-chat" aria-selected="false">Chat</a> -->
+                                    <!-- <a class="nav-item nav-link" id="nav-contact-tab" data-toggle="tab" href="#nav-contact" role="tab" aria-controls="nav-contact" aria-selected="false">Contact</a> -->
+                                </div>
+                            </nav>
+                            <div class="tab-content" id="nav-tabContent">
+                                <!-- fighting cards -->
+                                <div class="tab-pane fade show active  p-3" id="nav-fight" role="tabpanel" aria-labelledby="nav-fight-tab">
+                                    <table class="table table-sm table-borderless table-cards">
+                                        <thead>
+                                            <th>Attackera</th>
+                                            <th>Avvakta</th>
+                                            <th>Dubblera</th>
+                                            <th>Förbereda</th>
+                                            <th>Försvara</th>
+                                            <th>Hindra</th>
+                                            <th>Manövrera</th>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><img src="https://firebasestorage.googleapis.com/v0/b/fbcombat-11ea1.appspot.com/o/g%2Fforbiddenlands%2Fcards%2Fattackera.jpg?alt=media&token=3e07ec6f-8e32-44f7-86f0-02bdb9e57922" width="100" id="card-attackera" class="cardimage"></td>
+                                                <td><img src="https://firebasestorage.googleapis.com/v0/b/fbcombat-11ea1.appspot.com/o/g%2Fforbiddenlands%2Fcards%2Favvakta.jpg?alt=media&token=37b4cedd-1ff6-4714-bd6b-7747490b0d2e" width="100" id="card-avvakta" class="cardimage"></td>
+                                                <td><img src="https://firebasestorage.googleapis.com/v0/b/fbcombat-11ea1.appspot.com/o/g%2Fforbiddenlands%2Fcards%2Fdubblera.jpg?alt=media&token=dcb20707-f798-48c7-b134-bb6384d5f471" width="100" id="card-dubblera" class="cardimage"></td>
+                                                <td><img src="https://firebasestorage.googleapis.com/v0/b/fbcombat-11ea1.appspot.com/o/g%2Fforbiddenlands%2Fcards%2Fforbereda.jpg?alt=media&token=49ab0e81-f254-43e6-b662-02879afacbc7" width="100" id="card-forbereda" class="cardimage"></td>
+                                                <td><img src="https://firebasestorage.googleapis.com/v0/b/fbcombat-11ea1.appspot.com/o/g%2Fforbiddenlands%2Fcards%2Fforsvara.jpg?alt=media&token=189d8484-3238-41b2-a359-03e2394d1e3d" width="100" id="card-forsvara" class="cardimage"></td>
+                                                <td><img src="https://firebasestorage.googleapis.com/v0/b/fbcombat-11ea1.appspot.com/o/g%2Fforbiddenlands%2Fcards%2Fhindra.jpg?alt=media&token=373be894-7f57-4537-b895-25136c26249a" width="100" id="card-hindra" class="cardimage"></td>
+                                                <td><img src="https://firebasestorage.googleapis.com/v0/b/fbcombat-11ea1.appspot.com/o/g%2Fforbiddenlands%2Fcards%2Fmanovrera.jpg?alt=media&token=4d6ea3b6-ab7a-49d7-842b-81815628520a" width="100" id="card-manovrera" class="cardimage"></td>
+                                            </tr>
+                                            <tr>
+                                                <td><button id="attackera1" type="button" data-cardid="attackera" data-cardnr="1" class="btn btn-outline-secondary btn-sm btn-select-card btn-select-card-1">1</button>
+                                                    <button id="attackera2" type="button" data-cardid="attackera" data-cardnr="2" class="btn btn-outline-secondary btn-sm btn-select-card btn-select-card-2">2</button>
+                                                </td>
+                                                <td><button id="avvakta1" type="button" data-cardid="avvakta" data-cardnr="1" class="btn btn-outline-secondary btn-sm btn-select-card btn-select-card-1">1</button>
+                                                    <button id="avvakta2" type="button" data-cardid="avvakta" data-cardnr="2" class="btn btn-outline-secondary btn-sm btn-select-card btn-select-card-2">2</button>
+                                                </td>
+                                                <td><button id="dubblera1" type="button" data-cardid="dubblera" data-cardnr="1" class="btn btn-outline-secondary btn-sm btn-select-card btn-select-card-1">1</button>
+                                                    <button id="dubblera2" type="button" data-cardid="dubblera" data-cardnr="2" class="btn btn-outline-secondary btn-sm btn-select-card btn-select-card-2">2</button>
+                                                </td>
+                                                <td><button id="forbereda1" type="button" data-cardid="forbereda" data-cardnr="1" class="btn btn-outline-secondary btn-sm btn-select-card btn-select-card-1">1</button>
+                                                    <button id="forbereda2" type="button" data-cardid="forbereda" data-cardnr="2" class="btn btn-outline-secondary btn-sm btn-select-card btn-select-card-2">2</button>
+                                                </td>
+                                                <td><button id="forsvara1" type="button" data-cardid="forsvara" data-cardnr="1" class="btn btn-outline-secondary btn-sm btn-select-card btn-select-card-1">1</button>
+                                                    <button id="forsvara2" type="button" data-cardid="forsvara" data-cardnr="2" class="btn btn-outline-secondary btn-sm btn-select-card btn-select-card-2">2</button>
+                                                </td>
+                                                <td><button id="hindra1" type="button" data-cardid="hindra" data-cardnr="1" class="btn btn-outline-secondary btn-sm btn-select-card btn-select-card-1">1</button>
+                                                    <button id="hindra2" type="button" data-cardid="hindra" data-cardnr="2" class="btn btn-outline-secondary btn-sm btn-select-card btn-select-card-2">2</button>
+                                                </td>
+                                                <td><button id="manovrera1" type="button" data-cardid="manovrera" data-cardnr="1" class="btn btn-outline-secondary btn-sm btn-select-card btn-select-card-1">1</button>
+                                                    <button id="manovrera2" type="button" data-cardid="manovrera" data-cardnr="2" class="btn btn-outline-secondary btn-sm btn-select-card btn-select-card-2">2</button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- dice rolls -->
+                                <div class="tab-pane fade p-3" id="nav-dice" role="tabpanel" aria-labelledby="nav-dice-tab">
+                                    <div class="col-9">
+                                        <table class="table table-sm table-borderless" style="height:250px">
+                                            <tbody>
+                                                <tr>
+                                                    <td>Grundegenskap</td>
+                                                    <td class="text-left">
+                                                        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                                                            <label class="btn btn-light btn-sm active"><input type="radio" name="dice-ge" value="0" autocomplete="off" checked=""> 0</label>
+                                                            <label class="btn btn-light btn-sm"><input type="radio" name="dice-ge" value="1" autocomplete="off"> 1</label>
+                                                            <label class="btn btn-light btn-sm"><input type="radio" name="dice-ge" value="2" autocomplete="off"> 2</label>
+                                                            <label class="btn btn-light btn-sm"><input type="radio" name="dice-ge" value="3" autocomplete="off"> 3</label>
+                                                            <label class="btn btn-light btn-sm"><input type="radio" name="dice-ge" value="4" autocomplete="off"> 4</label>
+                                                            <label class="btn btn-light btn-sm"><input type="radio" name="dice-ge" value="5" autocomplete="off"> 5</label>
+                                                            <label class="btn btn-light btn-sm"><input type="radio" name="dice-ge" value="6" autocomplete="off"> 6</label>
+                                                        </div>
+                                                    </td>
+                                                    <td rowspan="5" class="align-top">                                                        
+                                                        <div class="text-left">
+                                                            <button id="btn-throw-dice" type="button" class="btn shadow-none btn-primary" style="white-space: nowrap;">Kasta tärningarna</button>
+                                                        </div>
+                                                        <div class="top-buffer text-left">
+                                                            <button type="button" class="btn shadow-none btn-info" style="white-space: nowrap;" id="btn-dice-reroll">Pressa slaget</button>
+                                                        </div>
+                                                        <div class="top-buffer text-left">
+                                                                <button type="button" class="btn shadow-none btn-dark" style="white-space: nowrap;" id="btn-dice-pride">Stolthet</button>
+                                                            </div>      
+                                                        <div class="top-buffer text-left">                                                             
+                                                            <div class="dropdown ">
+                                                                <select class="form-control w-100" id="drp-modifier">
+                                                                    <option selected>Modifikation</option>
+                                                                    <!-- <option value="0">Normal</option> -->
+                                                                    <option value="1">Krävande (-1)</option>
+                                                                    <option value="2">Svår (-2)</option>
+                                                                    <option value="3">Vanvettig (-3)</option>
+                                                                </select>
+                                                                </div>
+                                                        </div>                                                                                                                
+                                                    </td>
+                                                    <td rowspan="5" class="align-top">
+
+                                                            <div class="card text-left">
+                                                                    <div class="card-header">Resurser</div>
+                                                                    <div class="card-body">
+                                                                      <!-- <p class="card-text"> -->
+                                                                            <table class="table table-sm table-borderless">
+                                                                                <tr>
+                                                                                    <td>
+                                                                                        <div class="text-left">
+                                                                                                <button type="button" class="btn shadow-none btn-dark resource-dice" style="white-space: nowrap;" data-typeofdice="1d3">T3</button>
+                                                                                            </div>         
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <div class="text-left">
+                                                                                                <button type="button" class="btn shadow-none btn-dark resource-dice" style="white-space: nowrap;" data-typeofdice="1d4">T4</button>
+                                                                                            </div>     
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <div class="text-left">
+                                                                                                <button type="button" class="btn shadow-none btn-dark resource-dice" style="white-space: nowrap;" data-typeofdice="1d6">T6</button>
+                                                                                            </div>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <div class="text-left">
+                                                                                                <button type="button" class="btn shadow-none btn-dark resource-dice" style="white-space: nowrap;" data-typeofdice="1d8">T8</button>
+                                                                                            </div>
+                                                                                    </td>                                                                                    
+                                                                                </tr>
+                                                                                <tr>
+                                                                                    <td>
+                                                                                        <div class="text-left">
+                                                                                                <button type="button" class="btn shadow-none btn-dark resource-dice" style="white-space: nowrap;" data-typeofdice="1d10">T10</button>
+                                                                                            </div>         
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <div class="text-left">
+                                                                                                <button type="button" class="btn shadow-none btn-dark resource-dice" style="white-space: nowrap;" data-typeofdice="1d12">T12</button>
+                                                                                            </div>     
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <div class="text-left">
+                                                                                                <button type="button" class="btn shadow-none btn-dark resource-dice" style="white-space: nowrap;" data-typeofdice="1d20">T20</button>
+                                                                                            </div>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <!-- <div class="text-left">
+                                                                                                <button type="button" class="btn btn-dark resource-dice" style="white-space: nowrap;" data-typeofdice="1d4">T6</button>
+                                                                                            </div> -->
+                                                                                    </td>                                                                                    
+                                                                                </tr>                                                                                
+                                                                                </table>
+
+
+
+                                                                        <!-- </p> -->
+                                                                    </div>
+                                                                  </div>
+                                                    </td>                                                                                                         
+                                                </tr>
+                                                <tr>
+                                                    <td>Färdighet</td>
+                                                    <td class="text-left">
+                                                        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                                                            <label class="btn btn-danger btn-sm active"><input type="radio" name="dice-fv" value="0" autocomplete="off" checked=""> 0</label>
+                                                            <label class="btn btn-danger btn-sm"><input type="radio" name="dice-fv" value="1" autocomplete="off"> 1</label>
+                                                            <label class="btn btn-danger btn-sm"><input type="radio" name="dice-fv" value="2" autocomplete="off"> 2</label>
+                                                            <label class="btn btn-danger btn-sm"><input type="radio" name="dice-fv" value="3" autocomplete="off"> 3</label>
+                                                            <label class="btn btn-danger btn-sm"><input type="radio" name="dice-fv" value="4" autocomplete="off"> 4</label>
+                                                            <label class="btn btn-danger btn-sm"><input type="radio" name="dice-fv" value="5" autocomplete="off"> 5</label>
+                                                            <label class="btn btn-danger btn-sm"><input type="radio" name="dice-fv" value="6" autocomplete="off"> 6</label>
+                                                            <label class="btn btn-danger btn-sm"><input type="radio" name="dice-fv" value="7" autocomplete="off"> 7</label>
+                                                            <label class="btn btn-danger btn-sm"><input type="radio" name="dice-fv" value="8" autocomplete="off"> 8</label>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Vapen</td>
+                                                    <td class="text-left">
+                                                        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                                                            <label class="btn btn-dark btn-sm active"><input type="radio" name="dice-va" value="0" autocomplete="off" checked=""> 0</label>
+                                                            <label class="btn btn-dark btn-sm"><input type="radio" name="dice-va" value="1" autocomplete="off"> 1</label>
+                                                            <label class="btn btn-dark btn-sm"><input type="radio" name="dice-va" value="2" autocomplete="off"> 2</label>
+                                                            <label class="btn btn-dark btn-sm"><input type="radio" name="dice-va" value="3" autocomplete="off"> 3</label>
+                                                            <label class="btn btn-dark btn-sm"><input type="radio" name="dice-va" value="4" autocomplete="off"> 4</label>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Mäktig</td>
+                                                    <td class="text-left">
+                                                        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                                                            <label class="btn btn-success btn-sm active"><input type="radio" name="dice-art-might" value="0" autocomplete="off" checked=""> 0</label>
+                                                            <label class="btn btn-success btn-sm"><input type="radio" name="dice-art-might" value="1" autocomplete="off"> 1</label>
+                                                            <label class="btn btn-success btn-sm"><input type="radio" name="dice-art-might" value="2" autocomplete="off"> 2</label>
+                                                            <label class="btn btn-success btn-sm"><input type="radio" name="dice-art-might" value="3" autocomplete="off"> 3</label>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Episk</td>
+                                                    <td class="text-left">
+                                                        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                                                            <label class="btn btn-info btn-sm active"><input type="radio" name="dice-art-epic" value="0" autocomplete="off" checked=""> 0</label>
+                                                            <label class="btn btn-info btn-sm"><input type="radio" name="dice-art-epic" value="1" autocomplete="off"> 1</label>
+                                                            <label class="btn btn-info btn-sm"><input type="radio" name="dice-art-epic" value="2" autocomplete="off"> 2</label>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Legendarisk</td>
+                                                    <td class="text-left">
+                                                        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                                                            <label class="btn btn-warning btn-sm active"><input type="radio" name="dice-art-leg" value="0" autocomplete="off" checked=""> 0</label>
+                                                            <label class="btn btn-warning btn-sm"><input type="radio" name="dice-art-leg" value="1d12" autocomplete="off"> 1</label>
+                                                            <label class="btn btn-warning btn-sm"><input type="radio" name="dice-art-leg" value="2d12" autocomplete="off"> 2</label>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                             
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <!-- </div> -->
+                                </div>
+                                <!-- <div class="tab-pane fade p-3" id="nav-chat" role="tabpanel" aria-labelledby="nav-chat-tab">
+                                        <ul id="chat-messages" class="list-group list-group-flush list-chat-messages"></ul>
+                                </div> -->
+                                <div class="tab-pane fade p-3" id="nav-initiative" role="tabpanel" aria-labelledby="nav-initiative-tab">
+                                    <div class="row">
+                                        <div class="col"><button id="btn-random-initiative" type="button" class="btn shadow-none btn-primary btn-sm">Random initiative</button></div>
+                                        <div class="col"></div>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane fade p-3" id="nav-map" role="tabpanel" aria-labelledby="nav-map-tab">
+                                    <div class="row">
+                                        <div class="col">
+                                            <iframe width="640" height="360" src="https://realtimeboard.com/app/embed/o9J_kyafh6s=/?" frameborder="0" scrolling="no" allowfullscreen></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+
+
+
+                                <!-- <div class="tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab">...</div> -->
+                            </div>
+
+
+
+                        </div>
+                    </div>
+
+
+
+
+                    <!-- <div class="alert alert-success" id="info-alert">
+                    <button type="button" class="close" data-dismiss="alert">x</button>
+                    <strong>! </strong><span id="alerttext"></span>
+                </div> -->
+
+
+
+                </div>
+
+                <!-- /#page-content-wrapper -->
+            </div>
+
+        </div>
+        <!-- /#wrapper -->
+
+        <script src="https://www.gstatic.com/firebasejs/5.8.2/firebase.js"></script>
+        <script src="../../scripts/jquery-3.3.1.min.js"></script>
+        <script src="../../scripts/jquery-ui.min.js"></script>
+        <script src="../../scripts/globalconfig.js"></script>
+        <script src="scripts/config.js"></script>
+        <script src="../../scripts/common.js"></script>
+        <script src="../../scripts/bootstrap.bundle.min.js"></script>
+
+        <script src="../../scripts/moment.js"></script>
+        <script src="scripts/room.js"></script>
+        <script src="../../scripts/dice-roller.js"></script>
+
+        <!-- Menu Toggle Script -->
+        <script type="text/javascript">
+
+
+
+            $("#menu-toggle").click(function (e) {
+                e.preventDefault();
+                $("#wrapper").toggleClass("toggled");
+            });
+
+            //microplugin for excluding children when needing .text()
+            //
+            $.fn.ignore = function (sel) {
+                return this.clone().find(sel || ">*").remove().end();
+            };
+
+        </script>
+
+    </body>
+
+</html>
